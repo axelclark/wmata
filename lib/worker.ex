@@ -1,14 +1,28 @@
 defmodule Wmata.Worker do
   use GenServer
 
+  @name WW
+
   ## Client API
 
   def start_link(opts \\ []) do
-    GenServer.start_link(__MODULE__, :ok, opts)
+    GenServer.start_link(__MODULE__, :ok, opts ++ [name: WW])
   end
 
-  def get_station_info(pid, station) do
-    GenServer.call(pid, {:station, station})
+  def get_station_info(station) do
+    GenServer.call(@name, {:station, station})
+  end
+
+  def get_state do
+    GenServer.call(@name, :get_state)
+  end
+
+  def reset_state do
+    GenServer.cast(@name, :reset_state)
+  end
+
+  def stop do
+    GenServer.cast(@name, :stop)
   end
 
   ## Server Callbacks
@@ -25,6 +39,28 @@ defmodule Wmata.Worker do
       _ ->
         {:reply, :error, state}
     end
+  end
+
+  def handle_call(:get_state, _from, state) do
+    {:reply, state, state}
+  end
+
+  def handle_cast(:reset_state, _state) do
+    {:noreply, %{}}
+  end
+
+  def handle_cast(:stop, state) do
+    {:stop, :normal, state}
+  end
+
+  def terminate(reason, state) do
+    IO.puts "server terminated because of #{inspect reason}"
+    :ok
+  end
+
+  def handle_info(msg, state) do
+    IO.puts "received #{inspect msg}"
+    {:noreply, state}
   end
 
   ## Helper Functions
